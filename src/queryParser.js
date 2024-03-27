@@ -18,7 +18,7 @@ function parseQuery(query) {
   }
 }
 
-const parsedQuery = parseQuery("SELECT id, name FROM sample WHERE age = 25");
+const parsedQuery = parseQuery("SELECT id, name FROM sample ");
 console.log(parsedQuery);
 
 module.exports = parseQuery;
