@@ -3,22 +3,30 @@ const readCSV = require('./csvReader');
 
 async function executeSELECTQuery(query) {
     try {
-        const { fields, table, whereClause } = parseQuery(query);
+        const { fields, table, whereClauses } = parseQuery(query);
         const csvData = await readCSV(`${table}.csv`);
 
-        const filteredData = whereClause
+        const filteredData = whereClauses
             ? csvData.filter(row => {
-                const [field, value] = whereClause.split('=').map(s => s.trim());
-                return row[field] === value;
+                let satisfiesCondition = true;
+                for (const condition of whereClauses) {
+                    const { field, operator, value } = condition;
+                    if (operator === '=' && row[field] !== value) {
+                        satisfiesCondition = false;
+                        break;
+                    }
+                }
+                return satisfiesCondition;
             })
             : csvData;
 
-        const parsedData = filteredData.map(row => 
-            fields.reduce((parsedRow, field) => {
+        const parsedData = filteredData.map(row => {
+            const parsedRow = {};
+            for (const field of fields) {
                 parsedRow[field] = row[field];
-                return parsedRow;
-            }, {})
-        );
+            }
+            return parsedRow;
+        });
 
         return parsedData;
     } catch (error) {
