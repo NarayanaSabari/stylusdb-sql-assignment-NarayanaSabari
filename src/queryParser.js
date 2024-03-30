@@ -1,24 +1,42 @@
 function parseQuery(query) {
-  const selectRegex = /SELECT\s+(.*?)\s+FROM\s+(.*?)(?:\s+WHERE\s+(.*?))?$/i;
+  // Log the input query to ensure it's correct
+  // console.log(query);
+
+  const selectRegex = /^SELECT\s(.*?)\sFROM\s(.*?)(?:\s(?:INNER\sJOIN\s(.*?)\sON\s(.*?))?)?\s?(WHERE\s(.*?))?$/i;
+
+  // Check if the regular expression matches the query and log the matches
   const matches = query.match(selectRegex);
+  // console.log(matches);
 
   if (matches) {
     const fields = matches[1].split(',').map(field => field.trim());
     const table = matches[2].trim();
-    const whereClauses = matches[3] ? matches[3].split(/ AND | OR /i).map(condition => {
-        const [field, operator, value] = condition.trim().split(/\s+/);
-        return { field, operator, value };
-    }) : [];
+    const joinTable = matches[3] ? matches[3].trim() : null;
+    const joinCondition = matches[4] ? parseJoinCondition(matches[4].trim()) : null;
+    const whereClause = matches[6] ? matches[6].trim() : null;
+    const whereClauses = whereClause ? parseWhereClause(whereClause) : [];
 
-    // console.log({ fields, table, whereClause }); // Logging the parsed query for debugging
-
-    return { fields, table, whereClauses };
+    return { fields, table, whereClauses, joinTable, joinCondition };
   } else {
     throw new Error('Invalid query format');
   }
 }
 
-// const parsedQuery = parseQuery("SELECT id, name FROM sample WHERE age = 30");
+function parseJoinCondition(joinCondition) {
+  const [left, right] = joinCondition.split('=').map(part => part.trim());
+  return { left, right };
+}
+
+function parseWhereClause(whereClause) {
+  const conditions = whereClause.split(' AND ').map(condition => {
+    const [field, operator, value] = condition.trim().split(/\s+/);
+    return { field, operator, value };
+  });
+  return conditions;
+}
+
+// const parsedQuery = parseQuery("SELECT id, name FROM student WHERE age = 30 AND name = John");
 // console.log(parsedQuery);
 
 module.exports = parseQuery;
+
