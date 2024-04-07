@@ -40,22 +40,39 @@ function parseJoinClause(query) {
 }
 
 function parseQuery(query) {
-    const selectRegex = /^SELECT\s(.*?)\sFROM\s(.*?)(?:\s(INNER|LEFT|RIGHT)\sJOIN\s(.*?)\sON\s(.*?))?(?:\sWHERE\s(.*?))?(?:\sGROUP\sBY\s(.*?))?$/i;
-    const matches = query.match(selectRegex);
+    try {
+        const selectRegex = /^SELECT\s(.*?)\sFROM\s(.*?)(?:\s(INNER|LEFT|RIGHT)\sJOIN\s(.*?)\sON\s(.*?))?(?:\sWHERE\s(.*?))?(?:\sGROUP\sBY\s(.*?))?(?:\sORDER\sBY\s(.*?))?(?:\sLIMIT\s(\d+))?$/i;
 
-    if (matches) {
+        const matches = query.match(selectRegex);
+
+        if (!matches[1]) {
+            throw new Error(`Invalid SELECT format.`);
+        }
+        if (!matches[6]) {
+            throw new Error(`Invalid WHERE format.`);
+        }
+
+
         const fields = matches[1].split(',').map(field => field.trim());
         const table = matches[2].trim();
-        const {joinType,joinTable,joinCondition} = parseJoinClause(query)
+        const { joinType, joinTable, joinCondition } = parseJoinClause(query);
         const whereClause = matches[6] ? matches[6].trim() : null;
         const whereClauses = whereClause ? parseWhereClause(whereClause) : [];
         const groupByFields = matches[7] ? matches[7].split(',').map(field => field.trim()) : null;
-        const hasAggregateWithoutGroupBy = hasAggregateWithoutGroupBy_(fields) && !groupByFields  ;
-        return { fields, table, whereClauses, groupByFields, joinType, joinTable, joinCondition, hasAggregateWithoutGroupBy };
-    } else {
-        throw new Error('Invalid query format');
+        const orderByFields = matches[8] ? matches[8].split(',').map(field => {
+            const [fieldName, order] = field.trim().split(/\s+/);
+            return { fieldName, order: order ? order.toUpperCase() : 'ASC' };
+        }) : null;
+        const hasAggregateWithoutGroupBy = hasAggregateWithoutGroupBy_(fields) && !groupByFields;
+        const limit = matches[9] ? parseInt(matches[9]) : null;
+
+        return { fields, table, whereClauses, groupByFields, orderByFields, joinType, joinTable, joinCondition, hasAggregateWithoutGroupBy, limit };
+    } catch (error) {
+        throw new Error(`Query parsing error: ${error.message}`);
     }
 }
+
+
 
 // const parsedQuery = parseQuery("SELECT id, name FROM student");
 // console.log(parsedQuery);
