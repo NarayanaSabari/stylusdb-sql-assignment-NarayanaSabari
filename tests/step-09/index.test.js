@@ -22,7 +22,7 @@ test('Parse SQL Query', () => {
         joinType: null,
         groupByFields: null,
         hasAggregateWithoutGroupBy: false,
-        "orderByFields": null,"limit": null
+        "orderByFields": null,"limit": null,isDistinct: false,
     });
 });
 
@@ -52,7 +52,7 @@ test('Parse SQL Query with WHERE Clause', () => {
         joinType: null,
         groupByFields: null,
         hasAggregateWithoutGroupBy: false,
-        "orderByFields": null,"limit": null
+        "orderByFields": null,"limit": null,isDistinct: false,
     });
 });
 
@@ -86,7 +86,7 @@ test('Parse SQL Query with Multiple WHERE Clauses', () => {
         joinType: null,
         groupByFields: null,
         hasAggregateWithoutGroupBy: false,
-        "orderByFields": null,"limit": null
+        "orderByFields": null,"limit": null,isDistinct: false,
     });
 });
 
@@ -123,7 +123,7 @@ test('Parse SQL Query with INNER JOIN', async () => {
         joinCondition: { left: 'student.id', right: 'enrollment.student_id' },
         groupByFields: null,
         hasAggregateWithoutGroupBy: false,
-        "orderByFields": null,"limit": null
+        "orderByFields": null,"limit": null,isDistinct: false,
     })
 });
 
@@ -139,7 +139,7 @@ test('Parse SQL Query with INNER JOIN and WHERE Clause', async () => {
         joinCondition: { left: 'student.id', right: 'enrollment.student_id' },
         groupByFields: null,
         hasAggregateWithoutGroupBy: false,
-        "orderByFields": null,"limit": null
+        "orderByFields": null,"limit": null,isDistinct: false,
     })
 });
 

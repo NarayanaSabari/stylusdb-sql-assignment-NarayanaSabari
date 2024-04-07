@@ -204,6 +204,14 @@ function evaluateCondition(row, clause) {
 
   const fieldValue = parseValue(row[field]);
 
+  if (operator === 'LIKE') {
+    // Transform SQL LIKE pattern to JavaScript RegExp pattern
+    const regexPattern = '^' + value.replace(/%/g, '.*').replace(/_/g, '.') + '$';
+    const regex = new RegExp(regexPattern, 'i'); // 'i' for case-insensitive matching
+    console.log(regex)
+    return regex.test(row[field]);
+}
+
   switch (operator) {
     case "=":
       return fieldValue === cleanedValue;
@@ -258,28 +266,35 @@ async function executeSELECTQuery(query) {
       groupByFields,
       hasAggregateWithoutGroupBy,
       orderByFields,
-      limit
+      limit,
+      isDistinct
     } = parseQuery(query);
-    console.log(parseQuery(query))
+    
+    console.log("Parsed Query:", parseQuery(query)); // Logging the parsed query for debugging
+    
     let data = await readCSV(`${table}.csv`);
-  
+    
     // Perform INNER JOIN if specified
     if (joinTable && joinCondition) {
       const joinData = await readCSV(`${joinTable}.csv`);
       switch (joinType.toUpperCase()) {
         case "INNER":
+          console.log("Performing INNER JOIN...");
           data = performInnerJoin(data, joinData, joinCondition, fields, table);
           break;
         case "LEFT":
+          console.log("Performing LEFT JOIN...");
           data = performLeftJoin(data, joinData, joinCondition, fields, table);
           break;
         case "RIGHT":
+          console.log("Performing RIGHT JOIN...");
           data = performRightJoin(data, joinData, joinCondition, fields, table);
           break;
         default:
           throw new Error(`Unsupported JOIN type: ${joinType}`);
       }
     }
+    
     // Apply WHERE clause filtering after JOIN (or on the original data if no join)
     let filteredData =
       whereClauses.length > 0
@@ -287,15 +302,17 @@ async function executeSELECTQuery(query) {
             whereClauses.every((clause) => evaluateCondition(row, clause)),
           )
         : data;
-  
+    
     let groupResults = filteredData;
-    console.log({ hasAggregateWithoutGroupBy });
+    console.log("Has Aggregate Without Group By:", hasAggregateWithoutGroupBy);
+    
     if (hasAggregateWithoutGroupBy) {
+      console.log("Handling Aggregate Without Group By...");
       // Special handling for queries like 'SELECT COUNT(*) FROM table'
       const result = {};
-  
-      console.log({ filteredData });
-  
+    
+      console.log("Filtered Data:", filteredData);
+    
       fields.forEach((field) => {
         const match = /(\w+)\((\*|\w+)\)/.exec(field);
         if (match) {
@@ -331,9 +348,14 @@ async function executeSELECTQuery(query) {
           }
         }
       });
-      
-  
+    
+      if (isDistinct) {
+        console.log("Handling DISTINCT...");
+        result = [...new Map(result.map(item => [fields.map(field => item[field]).join('|'), item])).values()];
+      }
+    
       if (orderByFields) {
+        console.log("Sorting results...");
         const orderByGroup = (a, b) => {
           for (let { fieldName, order } of orderByFields) {
             if (a[fieldName] < b[fieldName]) return order === "ASC" ? -1 : 1;
@@ -348,11 +370,13 @@ async function executeSELECTQuery(query) {
       }
       // Add more cases here if needed for other aggregates
     } else if (groupByFields) {
+      console.log("Applying Group By...");
       groupResults = applyGroupBy(filteredData, groupByFields, fields);
-  
+    
       // Order them by the specified fields
       let orderedResults = groupResults;
       if (orderByFields) {
+        console.log("Sorting results...");
         orderedResults = groupResults.sort((a, b) => {
           for (let { fieldName, order } of orderByFields) {
             if (a[fieldName] < b[fieldName]) return order === "ASC" ? -1 : 1;
@@ -361,14 +385,23 @@ async function executeSELECTQuery(query) {
           return 0;
         });
       }
+    
+      if (isDistinct) {
+        console.log("Handling DISTINCT... elseif");
+        orderedResults = [...new Map(orderedResults.map(item => [fields.map(field => item[field]).join('|'), item])).values()];
+      }
+      
       if (limit !== null) {
-        groupResults = groupResults.slice(0, limit);
-    }
-      return groupResults;
+        console.log("Applying Limit...");
+        orderedResults = orderedResults.slice(0, limit);
+      }
+    
+      return orderedResults;
     } else {
       // Order them by the specified fields
       let orderedResults = groupResults;
       if (orderByFields) {
+        console.log("Sorting results...");
         orderedResults = groupResults.sort((a, b) => {
           for (let { fieldName, order } of orderByFields) {
             if (a[fieldName] < b[fieldName]) return order === "ASC" ? -1 : 1;
@@ -377,12 +410,19 @@ async function executeSELECTQuery(query) {
           return 0;
         });
       }
-  
+    
+      if (isDistinct) {
+        console.log("Handling DISTINCT...else");
+        orderedResults = [...new Map(orderedResults.map(item => [fields.map(field => item[field]).join('|'), item])).values()];
+      }
+    
       if (limit !== null) {
-        groupResults = orderedResults.slice(0, limit);
-    }
+        console.log("Applying Limit...");
+        orderedResults = orderedResults.slice(0, limit);
+      }
+    
       // Select the specified fields
-      return groupResults.map((row) => {
+      return orderedResults.map((row) => {
         const selectedRow = {};
         fields.forEach((field) => {
           // Assuming 'field' is just the column name without table prefix
@@ -391,6 +431,8 @@ async function executeSELECTQuery(query) {
         return selectedRow;
       });
     }
+    
+    
   }
   catch (error) {
      // Log error and provide user-friendly message
@@ -403,7 +445,7 @@ async function executeSELECTQuery(query) {
 (async () => {
   try {
     const data = await executeSELECTQuery(
-      "SELECT COUNT(id) as count, age FROM student GROUP BY age ORDER BY age DESC",
+      "SELECT DISTINCT name FROM student WHERE name LIKE '%e%'",
     );
     console.log("Result:", data);
   } catch (error) {

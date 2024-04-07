@@ -10,9 +10,15 @@ function parseJoinCondition(joinCondition) {
 }
 
 function parseWhereClause(whereClause) {
-    const conditions = whereClause.split(' AND ').map(condition => {
-        const [field, operator, value] = condition.trim().split(/\s+/);
-        return { field, operator, value };
+    const conditions = whereClause.split(" AND ").map((condition) => {
+        if (condition.includes(" LIKE ")) {
+        
+            const [field,  pattern] = condition.split(/\sLIKE\s/i);
+            return { field: field.trim(), operator: "LIKE", value: pattern.trim(). replace(/['"]/g, '') };
+        } else {
+            const [field, operator, value] = condition.trim().split(/\s+/);
+            return { field, operator, value };
+        }
     });
     return conditions;
 }
@@ -41,6 +47,13 @@ function parseJoinClause(query) {
 
 function parseQuery(query) {
     try {
+        let isDistinct = false;
+
+        if (query.toUpperCase().includes('SELECT DISTINCT')) {
+            isDistinct = true;
+            query = query.replace('SELECT DISTINCT', 'SELECT');
+        }
+
         const selectRegex = /^SELECT\s(.*?)\sFROM\s(.*?)(?:\s(INNER|LEFT|RIGHT)\sJOIN\s(.*?)\sON\s(.*?))?(?:\sWHERE\s(.*?))?(?:\sGROUP\sBY\s(.*?))?(?:\sORDER\sBY\s(.*?))?(?:\sLIMIT\s(\d+))?$/i;
 
         const matches = query.match(selectRegex);
@@ -64,7 +77,7 @@ function parseQuery(query) {
         const hasAggregateWithoutGroupBy = hasAggregateWithoutGroupBy_(fields) && !groupByFields;
         const limit = matches[9] ? parseInt(matches[9]) : null;
 
-        return { fields, table, whereClauses, groupByFields, orderByFields, joinType, joinTable, joinCondition, hasAggregateWithoutGroupBy, limit };
+        return { fields, table, whereClauses, groupByFields, orderByFields, joinType, joinTable, joinCondition, hasAggregateWithoutGroupBy, limit ,isDistinct};
     } catch (error) {
         throw new Error(`Query parsing error: ${error.message}`);
     }
