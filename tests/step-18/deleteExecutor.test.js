@@ -20,9 +20,11 @@ test('Execute DELETE FROM Query for courses.csv', async () => {
     // Execute DELETE statement
     const deleteQuery = "DELETE FROM courses WHERE course_id = '2'";
     await executeDELETEQuery(deleteQuery);
+    
 
     // Verify the course was removed
     const updatedData = await readCSV('courses.csv');
+    console.log(updatedData);
     const deletedCourse = updatedData.find(course => course.course_id === '2');
     expect(deletedCourse).toBeUndefined();
 

@@ -1,4 +1,4 @@
-const { parseSelectQuery,parseINSERTQuery } = require("./queryParser");
+const { parseSelectQuery,parseINSERTQuery,parseDELETEQuery } = require("./queryParser");
 const {readCSV,writeCSV} = require("./csvReader");
 
 function performInnerJoin(data, joinData, joinCondition, fields, table) {
@@ -478,17 +478,54 @@ async function executeINSERTQuery(query) {
   }
 }
 
+
+async function executeDELETEQuery(query) {
+    try {
+        // Parsing the DELETE query
+        const { table, whereClauses } = parseDELETEQuery(query);
+
+        // Reading data from CSV
+        let data = await readCSV(`${table}.csv`);
+
+        if (whereClauses.length > 0) {
+            // Filter out the rows that meet the where clause conditions
+            data = data.filter(row => {
+                for (const { column, operator, value } of whereClauses) {
+                    if (evaluateCondition(row, { field: column, operator, value })) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        } else {
+            // If no where clause, clear the entire table
+            data = [];
+        }
+
+        // Save the updated data back to the CSV file
+        await writeCSV(`${table}.csv`, data);
+
+        return { message: "Rows deleted successfully." };
+    } catch (error) {
+        console.error("Error executing DELETE query:", error);
+        throw new Error(`Error executing DELETE query: ${error.message}`);
+    }
+}
+
+
+
+
   
 
-(async () => {
-  try {
-    const data = await executeSELECTQuery(
-      "SELECT name FROM student WHERE name LIKE '%a%' ORDER BY name ASC LIMIT 2",
-    );
-    console.log("Result:", data);
-  } catch (error) {
-    console.error("Error:", error);
-  }
-})();
+// (async () => {
+//   try {
+//     const data = await executeDELETEQuery(
+//       "DELETE FROM courses WHERE course_id = '2'",
+//     );
+//     console.log("Result:", data);
+//   } catch (error) {
+//     console.error("Error:", error);
+//   }
+// })();
 
-module.exports = {executeSELECTQuery,executeINSERTQuery};
+module.exports = {executeSELECTQuery,executeINSERTQuery,executeDELETEQuery};

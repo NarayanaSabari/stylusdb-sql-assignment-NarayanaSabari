@@ -103,8 +103,38 @@ function parseINSERTQuery(query) {
     };
 }
 
-const parsedQuery = parseINSERTQuery("INSERT INTO grades (student_id, course, grade) VALUES ('4', 'Physics', 'A')");
-console.log(parsedQuery);
+function parseDELETEQuery(query) {
+    try {
+        const deleteRegex = /^DELETE\sFROM\s(\w+)\s(?:WHERE\s(.+))?$/i;
+        const matches = query.match(deleteRegex);
+
+        if (!matches) {
+            throw new Error(`Invalid DELETE statement format.`);
+        }
+
+        const table = matches[1].trim();
+        const whereClause = matches[2] ? matches[2].trim().replace(/['"]/g, '') : null;
+        const whereClauses = [];
+
+        if (whereClause) {
+            // Splitting the where clause into individual conditions
+            const conditions = whereClause.split(/\s+AND\s+/);
+            conditions.forEach(condition => {
+                const [column, operator, value] = condition.split(/\s+/);
+                whereClauses.push({ column, operator, value });
+            });
+        }
+
+        return { type: 'DELETE', table, whereClauses };
+    } catch (error) {
+        throw new Error(`Query parsing error: ${error.message}`);
+    }
+}
+
+
+
+// const parsedQuery = parseDELETEQuery("DELETE FROM courses WHERE course_id = '2'");
+// console.log(parsedQuery);
 
 // Exporting both parseQuery and parseJoinClause
-module.exports = { parseSelectQuery,parseJoinClause,parseINSERTQuery };
+module.exports = { parseSelectQuery,parseJoinClause,parseINSERTQuery,parseDELETEQuery };

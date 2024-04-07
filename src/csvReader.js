@@ -1,5 +1,6 @@
 const csv = require('csv-parser');
 const fs = require('fs');
+const { parse } = require("json2csv");
 
 async function readCSV(filePath) {
     const results = [];
@@ -21,21 +22,9 @@ async function readCSV(filePath) {
     }
 }
 
-async function writeCSV(filePath, data) {
-    try {
-        // Create the CSV header
-        const header = Object.keys(data[0]).join(',');
-
-        // Create CSV content
-        const csvContent = data.map(row => Object.values(row).join(',')).join('\n');
-
-        // Write CSV header and content to file
-        await fs.promises.writeFile(filePath, `${header}\n${csvContent}`);
-
-        console.log(`CSV file '${filePath}' has been successfully written.`);
-    } catch (error) {
-        throw new Error(`Error writing CSV file: ${error.message}`);
-    }
-}
+async function writeCSV(filename, data) {
+    const csv = parse(data);
+    fs.writeFileSync(filename, csv);
+  }
 
 module.exports = {readCSV,writeCSV};
