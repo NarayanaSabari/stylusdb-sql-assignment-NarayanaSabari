@@ -332,15 +332,15 @@ async function executeSELECTQuery(query) {
   }
 }
 
-(async () => {
-  try {
-    const data = await executeSELECTQuery(
-      "SELECT enrollment.course,student.name FROM student LEFT JOIN enrollment ON student.id=enrollment.student_id"
-    );
-    console.log("Result:", data);
-  } catch (error) {
-    console.error("Error:", error);
-  }
-})();
+// (async () => {
+//   try {
+//     const data = await executeSELECTQuery(
+//       "SELECT enrollment.course,student.name FROM student LEFT JOIN enrollment ON student.id=enrollment.student_id"
+//     );
+//     console.log("Result:", data);
+//   } catch (error) {
+//     console.error("Error:", error);
+//   }
+// })();
 
 module.exports = executeSELECTQuery;

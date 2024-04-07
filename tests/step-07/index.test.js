@@ -13,13 +13,15 @@ test('Read CSV File', async () => {
 test('Parse SQL Query', () => {
     const query = 'SELECT id, name FROM student';
     const parsed = parseQuery(query);
-expect(parsed).toEqual({
+    expect(parsed).toEqual({
         fields: ['id', 'name'],
         table: 'student',
         whereClauses: [],
         joinCondition: null,
         joinTable: null,
-        joinType: null
+        joinType: null,
+        groupByFields: null,
+        hasAggregateWithoutGroupBy: false,
     });
 });
 
@@ -46,7 +48,9 @@ test('Parse SQL Query with WHERE Clause', () => {
         }],
         joinCondition: null,
         joinTable: null,
-        joinType: null
+        joinType: null,
+        groupByFields: null,
+        hasAggregateWithoutGroupBy: false,
     });
 });
 
@@ -58,6 +62,7 @@ test('Execute SQL Query with WHERE Clause', async () => {
     expect(result[0]).toHaveProperty('name');
     expect(result[0].id).toBe('2');
 });
+
 
 test('Parse SQL Query with Multiple WHERE Clauses', () => {
     const query = 'SELECT id, name FROM student WHERE age = 30 AND name = John';
@@ -76,11 +81,13 @@ test('Parse SQL Query with Multiple WHERE Clauses', () => {
         }],
         joinCondition: null,
         joinTable: null,
-        joinType: null
+        joinType: null,
+        groupByFields: null,
+        hasAggregateWithoutGroupBy: false,
     });
 });
 
-test('Execute SQL Query with Multiple WHERE Clause', async () => {
+test('Execute SQL Query with Complex WHERE Clause', async () => {
     const query = 'SELECT id, name FROM student WHERE age = 30 AND name = John';
     const result = await executeSELECTQuery(query);
     expect(result.length).toBe(1);

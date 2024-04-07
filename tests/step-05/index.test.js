@@ -13,13 +13,15 @@ test('Read CSV File', async () => {
 test('Parse SQL Query', () => {
     const query = 'SELECT id, name FROM student';
     const parsed = parseQuery(query);
-expect(parsed).toEqual({
+    expect(parsed).toEqual({
         fields: ['id', 'name'],
         table: 'student',
         whereClauses: [],
         joinCondition: null,
         joinTable: null,
-        joinType: null
+        joinType: null,
+        groupByFields: null,
+        hasAggregateWithoutGroupBy: false,
     });
 });
 
@@ -46,7 +48,9 @@ test('Parse SQL Query with WHERE Clause', () => {
         }],
         joinCondition: null,
         joinTable: null,
-        joinType: null
+        joinType: null,
+        groupByFields: null,
+        hasAggregateWithoutGroupBy: false,
     });
 });
 

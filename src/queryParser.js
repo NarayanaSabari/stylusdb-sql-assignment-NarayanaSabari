@@ -57,8 +57,8 @@ function parseQuery(query) {
     }
 }
 
-const parsedQuery = parseQuery("SELECT * FROM table1 INNER JOIN table2 ON table1.id = table2.ref_id");
-console.log(parsedQuery);
+// const parsedQuery = parseQuery("SELECT id, name FROM student");
+// console.log(parsedQuery);
 
 // Exporting both parseQuery and parseJoinClause
 module.exports = { parseQuery,parseJoinClause };
