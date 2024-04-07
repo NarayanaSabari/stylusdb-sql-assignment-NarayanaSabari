@@ -48,9 +48,7 @@ function parseQuery(query) {
         if (!matches[1]) {
             throw new Error(`Invalid SELECT format.`);
         }
-        if (!matches[6]) {
-            throw new Error(`Invalid WHERE format.`);
-        }
+
 
 
         const fields = matches[1].split(',').map(field => field.trim());
