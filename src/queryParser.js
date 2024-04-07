@@ -45,7 +45,7 @@ function parseJoinClause(query) {
     };
 }
 
-function parseQuery(query) {
+function parseSelectQuery(query) {
     try {
         let isDistinct = false;
 
@@ -83,10 +83,28 @@ function parseQuery(query) {
     }
 }
 
+function parseINSERTQuery(query) {
+    const insertRegex = /^INSERT INTO\s+(\w+)\s+\((.*?)\)\s+VALUES\s+\((.*?)\)$/i;
 
+    const match = query.match(insertRegex);
+    if (!match) {
+        throw new Error("Invalid INSERT query format.");
+    }
 
-// const parsedQuery = parseQuery("SELECT id, name FROM student");
-// console.log(parsedQuery);
+    const table = match[1];
+    const columns = match[2].split(",").map((column) => column.trim().replace(/['"]/g, ''));
+    const values = match[3].split(",").map((value) => value.trim().replace(/['"]/g, ''));
+
+    return {
+        type: "INSERT",
+        table,
+        columns,
+        values,
+    };
+}
+
+const parsedQuery = parseINSERTQuery("INSERT INTO grades (student_id, course, grade) VALUES ('4', 'Physics', 'A')");
+console.log(parsedQuery);
 
 // Exporting both parseQuery and parseJoinClause
-module.exports = { parseQuery,parseJoinClause };
+module.exports = { parseSelectQuery,parseJoinClause,parseINSERTQuery };

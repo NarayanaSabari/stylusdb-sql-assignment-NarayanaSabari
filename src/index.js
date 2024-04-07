@@ -1,5 +1,5 @@
-const { parseQuery } = require("./queryParser");
-const readCSV = require("./csvReader");
+const { parseSelectQuery,parseINSERTQuery } = require("./queryParser");
+const {readCSV,writeCSV} = require("./csvReader");
 
 function performInnerJoin(data, joinData, joinCondition, fields, table) {
   return data.flatMap((mainRow) => {
@@ -268,11 +268,12 @@ async function executeSELECTQuery(query) {
       orderByFields,
       limit,
       isDistinct
-    } = parseQuery(query);
+    } = parseSelectQuery(query);
     
-    console.log("Parsed Query:", parseQuery(query)); // Logging the parsed query for debugging
+    console.log("Parsed Query:", parseSelectQuery(query)); // Logging the parsed query for debugging
     
     let data = await readCSV(`${table}.csv`);
+    console.log("Initial data:", data);
     
     // Perform INNER JOIN if specified
     if (joinTable && joinCondition) {
@@ -440,12 +441,49 @@ async function executeSELECTQuery(query) {
      throw new Error(`Error executing query: ${error.message}`);
   }
 }
+
+async function executeINSERTQuery(query) {
+  try {
+      const {
+          type,
+          table,
+          columns,
+          values,
+      } = parseINSERTQuery(query);
+
+      // Validate if the provided columns and values arrays have the same length
+      if (columns.length !== values.length) {
+          throw new Error(`Number of columns (${columns.length}) does not match the number of values (${values.length}).`);
+      }
+
+      // Create an object with key-value pairs of column names and their respective values
+      const rowData = {};
+      for (let i = 0; i < columns.length; i++) {
+          rowData[columns[i]] = values[i];
+      }
+
+      // Prepare data for writing to CSV
+      const dataToWrite = [rowData];
+
+      // Define the file path where the CSV will be written
+      const filePath = `${table}.csv`;
+
+      // Write data to CSV
+      await writeCSV(filePath, dataToWrite);
+
+      return dataToWrite.length; // Return the number of rows inserted
+  } catch (error) {
+      console.error("Error executing INSERT query:", error);
+      throw new Error(`Error executing INSERT query: ${error.message}`);
+  }
+}
+
   
 
 (async () => {
   try {
     const data = await executeSELECTQuery(
-      "SELECT DISTINCT name FROM student WHERE name LIKE '%e%'",
+      "SELECT name FROM student WHERE name LIKE '%a%' ORDER BY name ASC LIMIT 2",
     );
     console.log("Result:", data);
   } catch (error) {
@@ -453,4 +491,4 @@ async function executeSELECTQuery(query) {
   }
 })();
 
-module.exports = executeSELECTQuery;
+module.exports = {executeSELECTQuery,executeINSERTQuery};
