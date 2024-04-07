@@ -45,7 +45,7 @@ function parseQuery(query) {
 
         const matches = query.match(selectRegex);
 
-        if (!matches[1]) {
+        if (!matches) {
             throw new Error(`Invalid SELECT format.`);
         }
 
